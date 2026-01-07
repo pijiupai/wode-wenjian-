@@ -1,0 +1,2075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>米厂考核系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        :root {
+            --color-up: #10b981;
+            --color-down: #ef4444;
+            --color-neutral: #6b7280;
+            --color-primary: #2563eb;
+            --color-secondary: #7c3aed;
+            --color-warning: #f59e0b;
+            --color-info: #3b82f6;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-header: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-sm: 0.25rem;
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
+            --radius-xl: 0.75rem;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+            --transition-slow: 0.35s ease;
+        }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* 移动端适配基础样式 */
+        @media (max-width: 768px) {
+            html {
+                font-size: 14px;
+            }
+            body {
+                padding-bottom: 2rem;
+            }
+            /* 优化表格在移动端的显示 */
+            table {
+                font-size: 0.875rem;
+            }
+            th, td {
+                padding: 0.5rem 0.25rem;
+                min-width: 60px;
+            }
+            /* 优化按钮在移动端的显示 */
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            /* 优化输入框在移动端的显示 */
+            input, select, textarea {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+            /* 优化卡片间距 */
+            .card {
+                margin-bottom: 1rem;
+            }
+            /* 优化统计卡片 */
+            .stat-card {
+                padding: 0.75rem;
+            }
+            .stat-card p {
+                font-size: 0.75rem;
+            }
+            .stat-card .text-2xl {
+                font-size: 1.5rem;
+            }
+        }
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .card-header {
+            border-bottom: 1px solid var(--border-color);
+            background-color: #f8fafc;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+        .btn {
+            transition: all var(--transition-fast);
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        .btn:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: var(--color-secondary);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #6d28d9;
+            transform: translateY(-1px);
+        }
+        .btn-warning {
+            background-color: var(--color-warning);
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #d97706;
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            background-color: white;
+        }
+        .btn-outline:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        .btn-lg {
+            padding: 0.625rem 1.25rem;
+            font-size: 1rem;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: var(--color-up);
+            color: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 350px;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            margin: 5% auto;
+            padding: 0;
+            width: 95%;
+            max-width: 600px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .carousel {
+            overflow: hidden;
+            position: relative;
+        }
+        .carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+        .carousel-item {
+            min-width: 100%;
+        }
+        .clip-path-polygon {
+            clip-path: polygon(
+                0% 0%, 
+                95% 0%, 
+                100% 5%, 
+                100% 100%, 
+                5% 100%, 
+                0% 95%
+            );
+        }
+        .stat-card {
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--color-primary);
+            padding: 1rem;
+            background: white;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-normal);
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .stat-card.positive {
+            border-left-color: var(--color-up);
+        }
+        .stat-card.negative {
+            border-left-color: var(--color-down);
+        }
+        .stat-card.neutral {
+            border-left-color: var(--color-neutral);
+        }
+        .stat-card .stat-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+        .stat-card .stat-value.positive {
+            color: var(--color-up);
+        }
+        .stat-card .stat-value.negative {
+            color: var(--color-down);
+        }
+        .stat-card .stat-value.neutral {
+            color: var(--color-neutral);
+        }
+        .bg-grid {
+            background-image: 
+                linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div id="toast" class="toast"></div>
+
+    <div id="main-container">
+        <!-- 头部 -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <!-- 移除标题，保留空间平衡布局 -->
+                        <div class="w-8"></div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="theme-toggle" class="p-2 rounded hover:bg-gray-100">
+                            <i data-lucide="sun" class="h-6 w-6"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- 顶部卡片 -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 mb-6 shadow-lg">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">米厂考核系统</h2>
+                        <p class="text-blue-100 mt-1">实时监控考核数据，支持多维度分析</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+                        <button id="add-record-btn" class="btn bg-white text-blue-600 hover:bg-blue-50 py-2 px-4 text-sm">
+                            <i data-lucide="plus" class="h-4 w-4"></i>新增记录
+                        </button>
+                        <button id="save-all-data-btn" class="btn bg-yellow-500 text-white hover:bg-yellow-600 py-2 px-4 text-sm">
+                            <i data-lucide="save" class="h-4 w-4"></i>保存数据
+                        </button>
+                        <button id="add-rule-btn" class="btn bg-purple-600 text-white hover:bg-purple-700 py-2 px-4 text-sm">
+                            <i data-lucide="upload" class="h-4 w-4"></i>考核规则
+                        </button>
+                        <button id="import-btn" class="btn bg-white/20 text-white hover:bg-white/30 py-2 px-4 text-sm backdrop-blur-sm">
+                            <i data-lucide="file-text" class="h-4 w-4"></i>导入
+                        </button>
+                        <button id="export-btn" class="btn bg-white/20 text-white hover:bg-white/30 py-2 px-4 text-sm backdrop-blur-sm">
+                            <i data-lucide="download" class="h-4 w-4"></i>导出
+                        </button>
+                        <input type="file" id="file-input" accept=".xlsx" class="hidden">
+                        <input type="file" id="rule-file-input" accept=".jpg,.jpeg,.png" class="hidden">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 公告栏 -->
+            <div class="card mb-6 overflow-hidden hover-card">
+                <div class="bg-blue-50 p-5 border-l-4 border-blue-500 cursor-pointer hover:bg-blue-100 transition-colors" onclick="editAnnouncement()">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg flex-shrink-0">
+                            <i data-lucide="megaphone" class="h-5 w-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="text-lg font-semibold text-blue-800">公告信息</h3>
+                                <span class="text-xs text-blue-600 font-medium">点击编辑</span>
+                            </div>
+                            <p class="text-sm text-gray-700">为了规范米厂生产管理，提高员工工作积极性，现公布最新考核标准。请各班组认真学习，严格执行。考核结果将作为月度评优的重要依据。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="stat-card hover-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm font-medium text-gray-500">总记录数</p>
+                        <div class="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg">
+                            <i data-lucide="file-text" class="h-4 w-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline mt-1">
+                        <span id="total-records" class="text-3xl font-bold counter-value">0</span>
+                    </div>
+                </div>
+                <div class="stat-card positive hover-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm font-medium text-gray-500">总加分</p>
+                        <div class="w-8 h-8 flex items-center justify-center bg-green-100 text-green-600 rounded-lg">
+                            <i data-lucide="trending-up" class="h-4 w-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline mt-1">
+                        <span id="total-positive" class="text-3xl font-bold text-green-600 counter-value">+0</span>
+                    </div>
+                </div>
+                <div class="stat-card negative hover-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm font-medium text-gray-500">总扣分</p>
+                        <div class="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded-lg">
+                            <i data-lucide="trending-down" class="h-4 w-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline mt-1">
+                        <span id="total-negative" class="text-3xl font-bold text-red-600 counter-value">-0</span>
+                    </div>
+                </div>
+                <div class="stat-card neutral hover-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm font-medium text-gray-500">参与人数</p>
+                        <div class="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-600 rounded-lg">
+                            <i data-lucide="users" class="h-4 w-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline mt-1">
+                        <span id="total-persons" class="text-3xl font-bold counter-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主要内容区域 - 采用新的网格布局 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+                <!-- 左侧主要内容 - 占9列 -->
+                <div class="lg:col-span-9 space-y-6">
+                    <!-- 上月最佳展示 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- 上月最佳个人 -->
+                        <div class="card p-5 hover-card">
+                            <div class="flex items-center mb-4">
+                                <div class="w-10 h-10 flex items-center justify-center bg-yellow-100 text-yellow-600 rounded-lg mr-3">
+                                    <i data-lucide="award" class="h-5 w-5"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">上月最佳员工</h3>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-md">
+                                    <i data-lucide="user-check" class="w-10 h-10 text-yellow-600"></i>
+                                </div>
+                                <h4 id="best-person-name" class="text-lg font-bold text-gray-800 mb-1">-</h4>
+                                <p id="best-person-score" class="text-sm text-gray-500">-</p>
+                            </div>
+                        </div>
+
+                        <!-- 上月最佳班组 -->
+                        <div class="card p-5 hover-card">
+                            <div class="flex items-center mb-4">
+                                <div class="w-10 h-10 flex items-center justify-center bg-purple-100 text-purple-600 rounded-lg mr-3">
+                                    <i data-lucide="trophy" class="h-5 w-5"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">上月最佳班组</h3>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center shadow-md">
+                                    <i data-lucide="users" class="w-10 h-10 text-purple-600"></i>
+                                </div>
+                                <h4 id="best-team-name" class="text-lg font-bold text-gray-800 mb-1">-</h4>
+                                <p id="best-team-score" class="text-sm text-gray-500">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 班组得分对比 -->
+                    <div class="card p-5 hover-card">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg mr-3">
+                                <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">班组排名</h3>
+                        </div>
+                        <div class="h-64 bg-grid rounded-lg p-4">
+                            <canvas id="team-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 数据表格 -->
+                    <div class="card overflow-hidden hover-card">
+                        <div class="card-header p-5 flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-semibold text-gray-800">考核记录明细</h3>
+                                <button id="quick-add-btn" class="btn btn-primary py-2 px-4 text-sm">
+                                    <i data-lucide="plus" class="h-4 w-4"></i>新增
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+                                <select id="filter-person" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">按个人筛选</option>
+                                </select>
+                                <select id="filter-team" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">按班组筛选</option>
+                                </select>
+                                <select id="filter-year" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">按年筛选</option>
+                                </select>
+                                <select id="filter-month" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">按月筛选</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto" style="max-height: 60vh; -webkit-overflow-scrolling: touch;">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">员工</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班组</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">考核项</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">加减分</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评价人</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="data-table-body" class="bg-white divide-y divide-gray-200 hover:bg-gray-50 transition-colors">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧边栏 - 占3列 -->
+                <div class="lg:col-span-3 space-y-6">
+                    <!-- 个人得分排行 -->
+                    <div class="card p-5 hover-card">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 flex items-center justify-center bg-green-100 text-green-600 rounded-lg mr-3">
+                                <i data-lucide="users" class="h-5 w-5"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">员工排名</h3>
+                        </div>
+                        <div id="person-ranking" class="space-y-2">
+                        </div>
+                    </div>
+
+                    <!-- 考核规则图片 -->
+                    <div class="card p-5 hover-card">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg mr-3">
+                                <i data-lucide="file-text" class="h-5 w-5"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">考核标准图示</h3>
+                        </div>
+                        <!-- 拖拽上传区域 -->
+                        <div id="rule-dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-4 cursor-pointer hover:border-blue-400 transition-colors">
+                            <div class="flex items-center justify-center">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="text-sm text-gray-600 font-medium">点击上传图片</p>
+                                    <p class="text-xs text-gray-500">支持 JPG、PNG 格式</p>
+                                </div>
+                            </div>
+                            <input type="file" id="rule-drop-input" accept=".jpg,.jpeg,.png" class="hidden">
+                        </div>
+                        <!-- 规则图片列表 -->
+                        <div id="rule-images" class="grid grid-cols-1 gap-3">
+                            <p class="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">暂无上传的考核规则图片</p>
+                        </div>
+                    </div>
+
+                    <!-- 最近动态 -->
+                    <div class="card p-5 hover-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg mr-3">
+                                    <i data-lucide="message-circle" class="h-5 w-5"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">评论信息</h3>
+                            </div>
+                        </div>
+                        <div id="recent-activities" class="space-y-3 max-h-64 overflow-y-auto pr-1" onmouseenter="stopAutoScroll()" onmouseleave="startAutoScroll()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+        </main>
+    </div>
+
+    <!-- 新增记录模态框 -->
+    <div id="add-record-modal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">新增考核记录</h3>
+            </div>
+            <form id="add-record-form" class="p-6 space-y-4">
+                <div>
+                    <label for="record-date" class="block text-sm font-medium text-gray-700">日期</label>
+                    <input type="date" id="record-date" name="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="record-person" class="block text-sm font-medium text-gray-700">员工</label>
+                    <input type="text" id="record-person" name="person" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="record-team" class="block text-sm font-medium text-gray-700">班组</label>
+                    <input type="text" id="record-team" name="team" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="record-item" class="block text-sm font-medium text-gray-700">考核项</label>
+                    <input type="text" id="record-item" name="item" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="record-score" class="block text-sm font-medium text-gray-700">加减分</label>
+                    <input type="number" id="record-score" name="score" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="record-evaluator" class="block text-sm font-medium text-gray-700">评价人</label>
+                    <input type="text" id="record-evaluator" name="evaluator" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="请输入评价人姓名" required>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-add-btn" class="btn btn-outline py-2 px-4">取消</button>
+                    <button type="submit" class="btn btn-primary py-2 px-4">确定</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑公告模态框 -->
+    <div id="edit-announcement-modal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">编辑公告信息</h3>
+                    <button id="cancel-announcement-btn" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                <form id="edit-announcement-form" class="space-y-4">
+                    <div>
+                        <label for="announcement-content" class="block text-sm font-medium text-gray-700 mb-1">公告内容</label>
+                        <textarea id="announcement-content" name="content" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入公告内容..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" id="cancel-announcement-btn" class="btn btn-outline">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑记录模态框 -->
+    <div id="edit-record-modal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">编辑考核记录</h3>
+            </div>
+            <form id="edit-record-form" class="p-6 space-y-4">
+                <input type="hidden" id="edit-record-id">
+                <div>
+                    <label for="edit-record-date" class="block text-sm font-medium text-gray-700">日期</label>
+                    <input type="date" id="edit-record-date" name="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="edit-record-person" class="block text-sm font-medium text-gray-700">员工</label>
+                    <input type="text" id="edit-record-person" name="person" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="edit-record-team" class="block text-sm font-medium text-gray-700">班组</label>
+                    <input type="text" id="edit-record-team" name="team" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="edit-record-item" class="block text-sm font-medium text-gray-700">考核项</label>
+                    <input type="text" id="edit-record-item" name="item" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="edit-record-score" class="block text-sm font-medium text-gray-700">加减分</label>
+                    <input type="number" id="edit-record-score" name="score" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="edit-record-evaluator" class="block text-sm font-medium text-gray-700">评价人</label>
+                    <input type="text" id="edit-record-evaluator" name="evaluator" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="请输入评价人姓名" required>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-edit-btn" class="btn btn-outline py-2 px-4">取消</button>
+                    <button type="submit" class="btn btn-primary py-2 px-4">确定</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 上传规则模态框 -->
+    <div id="add-rule-modal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">上传考核规则图片</h3>
+            </div>
+            <form id="add-rule-form" class="p-6 space-y-4">
+                <div>
+                    <label for="rule-title" class="block text-sm font-medium text-gray-700">规则标题</label>
+                    <input type="text" id="rule-title" name="title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="rule-image" class="block text-sm font-medium text-gray-700">规则图片</label>
+                    <input type="file" id="rule-image" name="image" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-rule-btn" class="btn btn-outline py-2 px-4">取消</button>
+                    <button type="submit" class="btn btn-primary py-2 px-4">上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑公告模态框 -->
+    <div id="edit-announcement-modal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">编辑公告信息</h3>
+            </div>
+            <form id="edit-announcement-form" class="p-6 space-y-4">
+                <div>
+                    <label for="announcement-content" class="block text-sm font-medium text-gray-700">公告内容</label>
+                    <textarea id="announcement-content" name="content" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-announcement-btn" class="btn btn-outline py-2 px-4">取消</button>
+                    <button type="submit" class="btn btn-primary py-2 px-4">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // 模拟数据
+            let records = [
+                { id: 1, date: '2025-12-01', person: '张三', team: '一班', item: '迟到', score: -5 },
+                { id: 2, date: '2025-12-01', person: '李四', team: '二班', item: '加班', score: 10 },
+                { id: 3, date: '2025-12-02', person: '王五', team: '一班', item: '创新', score: 15 },
+                { id: 4, date: '2025-12-02', person: '赵六', team: '二班', item: '早退', score: -5 },
+                { id: 5, date: '2025-12-03', person: '孙七', team: '三班', item: '超额完成任务', score: 20 },
+                { id: 6, date: '2025-12-03', person: '周八', team: '三班', item: '安全事故', score: -30 },
+                { id: 7, date: '2025-12-04', person: '吴九', team: '一班', item: '提出合理化建议', score: 8 },
+                { id: 8, date: '2025-12-04', person: '郑十', team: '二班', item: '设备保养到位', score: 5 },
+                { id: 9, date: '2025-12-05', person: '刘一', team: '三班', item: '培训缺勤', score: -10 },
+                { id: 10, date: '2025-12-05', person: '陈二', team: '一班', item: '技术革新', score: 25 },
+                { id: 11, date: '2025-12-06', person: '林三', team: '二班', item: '质量检测合格', score: 12 },
+                { id: 12, date: '2025-12-06', person: '黄四', team: '一班', item: '材料浪费', score: -8 },
+                { id: 13, date: '2025-12-07', person: '周五', team: '三班', item: '生产记录完整', score: 6 },
+                { id: 14, date: '2025-12-07', person: '吴六', team: '二班', item: '操作失误', score: -15 },
+                { id: 15, date: '2025-12-08', person: '郑七', team: '一班', item: '团队协作优秀', score: 20 }
+            ];
+
+            const rules = [
+                { title: '考勤管理', content: '迟到一次扣5分，早退一次扣5分，旷工一次扣20分。' },
+                { title: '业绩奖励', content: '超额完成任务，按比例加分，最高加20分。' },
+                { title: '安全考核', content: '发生安全事故，主要责任人扣30分，次要责任人扣15分。' },
+                { title: '创新建议', content: '提出合理化建议并采纳，每条加5-10分。' },
+                { title: '设备维护', content: '设备保养到位，加5分；设备损坏，扣10-20分。' }
+            ];
+
+            // DOM元素
+            const toast = document.getElementById('toast');
+            const dataTableBody = document.getElementById('data-table-body');
+            const addRecordModal = document.getElementById('add-record-modal');
+            const addRecordForm = document.getElementById('add-record-form');
+            const cancelAddBtn = document.getElementById('cancel-add-btn');
+            const editRecordModal = document.getElementById('edit-record-modal');
+            const editRecordForm = document.getElementById('edit-record-form');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const importBtn = document.getElementById('import-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const fileInput = document.getElementById('file-input');
+            const filterPerson = document.getElementById('filter-person');
+            const filterTeam = document.getElementById('filter-team');
+            const filterYear = document.getElementById('filter-year');
+            const filterMonth = document.getElementById('filter-month');
+            const teamChartCanvas = document.getElementById('team-chart');
+            const personRanking = document.getElementById('person-ranking');
+            const addRuleModal = document.getElementById('add-rule-modal');
+            const addRuleForm = document.getElementById('add-rule-form');
+            const cancelRuleBtn = document.getElementById('cancel-rule-btn');
+            const ruleImages = document.getElementById('rule-images');
+            const recentActivities = document.getElementById('recent-activities');
+            const editAnnouncementModal = document.getElementById('edit-announcement-modal');
+            const editAnnouncementForm = document.getElementById('edit-announcement-form');
+            const cancelAnnouncementBtn = document.getElementById('cancel-announcement-btn');
+
+            let teamChart;
+            let filteredRecords = [...records];
+            let ruleImagesList = [];
+
+            console.log('DOM elements loaded successfully');
+
+            // 显示提示
+            function showToast(message, type = 'success') {
+                // 设置提示框类型样式
+                const typeClasses = {
+                    success: 'bg-green-500 border-green-600',
+                    error: 'bg-red-500 border-red-600',
+                    warning: 'bg-yellow-500 border-yellow-600',
+                    info: 'bg-blue-500 border-blue-600'
+                };
+                
+                // 设置图标
+                const typeIcons = {
+                    success: 'check-circle',
+                    error: 'x-circle',
+                    warning: 'alert-triangle',
+                    info: 'info'
+                };
+                
+                toast.innerHTML = `
+                    <div class="flex items-center">
+                        <i data-lucide="${typeIcons[type]}" class="h-5 w-5 mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                // 移除所有类型类
+                Object.values(typeClasses).forEach(cls => {
+                    toast.classList.remove(...cls.split(' '));
+                });
+                
+                // 添加当前类型类
+                toast.classList.add(...typeClasses[type].split(' '));
+                toast.classList.add('show');
+                
+                // 重新渲染图标
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            // 更新统计数据
+            function updateStats() {
+                const totalRecordsElement = document.getElementById('total-records');
+                const totalPositiveElement = document.getElementById('total-positive');
+                const totalNegativeElement = document.getElementById('total-negative');
+                const totalPersonsElement = document.getElementById('total-persons');
+                
+                const totalRecords = filteredRecords.length;
+                const positiveSum = filteredRecords.filter(r => r.score > 0).reduce((sum, r) => sum + r.score, 0);
+                const negativeSum = filteredRecords.filter(r => r.score < 0).reduce((sum, r) => sum + r.score, 0);
+                const uniquePersons = new Set(filteredRecords.map(r => r.person)).size;
+                
+                // 数字动画效果
+                animateCounter(totalRecordsElement, totalRecords);
+                animateCounter(totalPositiveElement, positiveSum, '+');
+                animateCounter(totalNegativeElement, negativeSum);
+                animateCounter(totalPersonsElement, uniquePersons);
+            }
+            
+            // 数字动画函数
+            function animateCounter(element, target, prefix = '', duration = 1000) {
+                if (!element) return;
+                
+                const start = 0;
+                const increment = target / (duration / 16);
+                let current = start;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    
+                    if ((target > 0 && current >= target) || (target < 0 && current <= target)) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    
+                    element.textContent = `${prefix}${Math.round(current)}`;
+                }, 16);
+            }
+
+            // 渲染表格
+            function renderTable() {
+                dataTableBody.innerHTML = '';
+                filteredRecords.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${record.person}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.team}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${record.item}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${record.score >= 0 ? 'text-green-600' : 'text-red-600'}">${record.score >= 0 ? '+' : ''}${record.score}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.evaluator || '未指定'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button data-id="${record.id}" class="edit-btn text-blue-600 hover:text-blue-900 mr-3">编辑</button>
+                            <button data-id="${record.id}" class="delete-btn text-red-600 hover:text-red-900">删除</button>
+                        </td>
+                    `;
+                    dataTableBody.appendChild(row);
+                });
+
+                // 绑定事件
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', handleEdit);
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', handleDelete);
+                });
+            }
+
+            // 渲染班组图表
+            function renderTeamChart() {
+                const teamScores = {};
+                filteredRecords.forEach(record => {
+                    if (!teamScores[record.team]) {
+                        teamScores[record.team] = 0;
+                    }
+                    teamScores[record.team] += record.score;
+                });
+
+                const labels = Object.keys(teamScores);
+                const data = Object.values(teamScores);
+
+                if (teamChart) {
+                    teamChart.destroy();
+                }
+
+                teamChart = new Chart(teamChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '班组得分',
+                            data: data,
+                            backgroundColor: '#3b82f6',
+                            borderColor: '#2563eb',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `得分: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                borderDash: [2, 4]
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 渲染员工排名
+            function renderPersonRanking() {
+                const personScores = {};
+                filteredRecords.forEach(record => {
+                    if (!personScores[record.person]) {
+                        personScores[record.person] = 0;
+                    }
+                    personScores[record.person] += record.score;
+                });
+
+                const sortedPersons = Object.entries(personScores)
+                    .sort(([,a], [,b]) => b - a);
+
+                personRanking.innerHTML = '';
+
+                // 显示所有员工排名
+                sortedPersons.forEach(([person, score], index) => {
+                    const item = document.createElement('div');
+                    let itemClass = 'flex items-center justify-between mb-2 p-1.5 rounded';
+                    let rankClass = 'w-5 h-5 flex items-center justify-center rounded text-xs font-medium mr-2';
+                    let scoreClass = 'text-xs font-bold';
+                    let icon = '';
+                    
+                    // 前三名用绿色标识
+                    if (index < 3) {
+                        itemClass += ' bg-green-100 border-l-4 border-green-500';
+                        rankClass += ' bg-green-500 text-white';
+                        scoreClass += ' text-green-700';
+                        if (index === 0) icon = '🥇';
+                        else if (index === 1) icon = '🥈';
+                        else if (index === 2) icon = '🥉';
+                    }
+                    // 后三名使用红色背景
+                    else if (index >= sortedPersons.length - 3) {
+                        itemClass += ' bg-red-50 border-l-4 border-red-400';
+                        rankClass += ' bg-red-400 text-white';
+                        scoreClass += ' text-red-600';
+                        icon = '⚠️';
+                    }
+                    // 中间排名使用灰色背景
+                    else {
+                        itemClass += ' bg-gray-50 border-l-4 border-gray-300';
+                        rankClass += ' bg-gray-300 text-gray-700';
+                        scoreClass += ' text-gray-600';
+                    }
+                    
+                    item.className = itemClass;
+                    
+                    item.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="${rankClass}">${index + 1}</div>
+                            <span class="text-xs font-medium truncate max-w-[70px]">${person}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="mr-1">${icon}</span>
+                            <span class="${scoreClass}">${score >= 0 ? '+' : ''}${score}</span>
+                        </div>
+                    `;
+                    personRanking.appendChild(item);
+                });
+            }
+
+
+
+            // 渲染评论信息
+            function renderRecentActivities() {
+                const recentRecords = [...filteredRecords]
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 10);
+
+                recentActivities.innerHTML = '';
+                recentRecords.forEach(record => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-start space-x-3 p-2 hover:bg-gray-50 rounded';
+                    item.innerHTML = `
+                        <div class="mt-1">
+                            <svg class="h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-gray-500 truncate">${record.date}</p>
+                            <p class="text-sm font-medium text-gray-900 truncate">${record.evaluator || '评价人'}: ${record.item}</p>
+                            <p class="text-xs text-gray-600">${record.person} ${record.score >= 0 ? '+' : ''}${record.score}分</p>
+                        </div>
+                    `;
+                    recentActivities.appendChild(item);
+                });
+                
+                // 启动自动滚动
+                setTimeout(() => {
+                    if (window.autoScrollInterval) {
+                        clearInterval(window.autoScrollInterval);
+                    }
+                    window.startAutoScroll();
+                }, 500);
+            }
+
+            // 渲染规则图片
+            function renderRuleImages() {
+                console.log('Rendering rule images, count:', ruleImagesList.length);
+                if (ruleImagesList.length === 0) {
+                    ruleImages.innerHTML = '<p class="text-sm text-gray-500 text-center col-span-full">暂无上传的考核规则图片</p>';
+                    return;
+                }
+
+                ruleImages.innerHTML = '';
+                ruleImagesList.forEach((rule, index) => {
+                    console.log('Rendering rule:', rule);
+                    const item = document.createElement('div');
+                    item.className = 'relative bg-gray-50 p-2 rounded-md';
+                    item.innerHTML = `
+                        <h4 class="text-sm font-medium text-gray-700 mb-2 truncate">${rule.title || '未命名规则'}</h4>
+                        <div class="bg-white p-1 rounded border border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onclick="showImageModal('${rule.url}', '${rule.title || '规则图片'}')">
+                            <img src="${rule.url}" alt="${rule.title || '规则图片'}" class="w-full h-auto rounded max-h-32 object-contain">
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-30 rounded">
+                                <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none">
+                                    <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <button data-index="${index}" class="delete-rule-btn absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors z-10">
+                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    `;
+                    ruleImages.appendChild(item);
+                });
+
+                // 绑定删除事件
+                document.querySelectorAll('.delete-rule-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const index = parseInt(e.currentTarget.dataset.index);
+                        console.log('Delete rule clicked for index:', index);
+                        if (confirm('确定要删除这条规则图片吗？')) {
+                            ruleImagesList.splice(index, 1);
+                            renderRuleImages();
+                            showToast('规则图片已删除');
+                        }
+                    });
+                });
+            }
+
+            // 渲染筛选器
+            function renderFilters() {
+                const persons = [...new Set(records.map(r => r.person))];
+                const teams = [...new Set(records.map(r => r.team))];
+                const years = [...new Set(records.map(r => r.date.split('-')[0]))];
+                const months = [...new Set(records.map(r => r.date.split('-')[1]))];
+
+                filterPerson.innerHTML = '<option value="">按个人筛选</option>';
+                persons.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p;
+                    option.textContent = p;
+                    filterPerson.appendChild(option);
+                });
+
+                filterTeam.innerHTML = '<option value="">按班组筛选</option>';
+                teams.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t;
+                    option.textContent = t;
+                    filterTeam.appendChild(option);
+                });
+
+                filterYear.innerHTML = '<option value="">按年筛选</option>';
+                years.forEach(y => {
+                    const option = document.createElement('option');
+                    option.value = y;
+                    option.textContent = y;
+                    filterYear.appendChild(option);
+                });
+
+                filterMonth.innerHTML = '<option value="">按月筛选</option>';
+                months.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m;
+                    option.textContent = `${m}月`;
+                    filterMonth.appendChild(option);
+                });
+            }
+
+            // 应用筛选
+            function applyFilters() {
+                const person = filterPerson.value;
+                const team = filterTeam.value;
+                const year = filterYear.value;
+                const month = filterMonth.value;
+
+                filteredRecords = records.filter(r => {
+                    const [rYear, rMonth] = r.date.split('-');
+                    return (!person || r.person === person) &&
+                           (!team || r.team === team) &&
+                           (!year || rYear === year) &&
+                           (!month || rMonth === month);
+                });
+                
+                // 按日期倒序排列（最新的记录在前面）
+                filteredRecords.sort((a, b) => {
+                    // 首先按日期排序（新日期在前）
+                    const dateCompare = new Date(b.date) - new Date(a.date);
+                    if (dateCompare !== 0) {
+                        return dateCompare;
+                    }
+                    // 如果日期相同，按ID排序（新记录在前）
+                    return b.id - a.id;
+                });
+
+                renderTable();
+                renderTeamChart();
+                renderPersonRanking();
+                renderRecentActivities();
+                updateStats();
+                calculateLastMonthBest();
+            }
+
+            // 处理新增记录
+            function handleAddRecord(e) {
+                e.preventDefault();
+                const formData = new FormData(addRecordForm);
+                const person = formData.get('person').trim();
+                const team = formData.get('team').trim();
+                
+                // 验证至少填写员工或班组中的一项
+                if (!person && !team) {
+                    showToast('请至少填写员工姓名或所属班组中的一项');
+                    return;
+                }
+                
+                const newRecord = {
+                    id: Date.now(),
+                    date: formData.get('date'),
+                    person: person || '',
+                    team: team || '',
+                    item: formData.get('item'),
+                    score: parseFloat(formData.get('score')),
+                    evaluator: formData.get('evaluator') || '系统管理员'
+                };
+                records.push(newRecord);
+                addRecordModal.classList.remove('show');
+                addRecordForm.reset();
+                renderFilters();
+                applyFilters();
+                saveDataToStorage(); // 保存数据
+                showToast('记录已成功添加');
+            }
+
+            // 处理编辑记录
+            function handleEdit(e) {
+                const id = e.target.dataset.id;
+                const record = records.find(r => r.id == id);
+                if (record) {
+                    document.getElementById('edit-record-id').value = record.id;
+                    document.getElementById('edit-record-date').value = record.date;
+                    document.getElementById('edit-record-person').value = record.person;
+                    document.getElementById('edit-record-team').value = record.team;
+                    document.getElementById('edit-record-item').value = record.item;
+                    document.getElementById('edit-record-score').value = record.score;
+                    editRecordModal.classList.add('show');
+                }
+            }
+
+            // 处理编辑提交
+            function handleEditRecord(e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-record-id').value;
+                const formData = new FormData(editRecordForm);
+                const person = formData.get('person').trim();
+                const team = formData.get('team').trim();
+                
+                // 验证至少填写员工或班组中的一项
+                if (!person && !team) {
+                    showToast('请至少填写员工姓名或所属班组中的一项');
+                    return;
+                }
+                
+                const index = records.findIndex(r => r.id == id);
+                if (index !== -1) {
+                    records[index] = {
+                        ...records[index],
+                        date: formData.get('date'),
+                        person: person || '',
+                        team: team || '',
+                        item: formData.get('item'),
+                        score: parseFloat(formData.get('score')),
+                        evaluator: formData.get('evaluator') || '系统管理员'
+                    };
+                    editRecordModal.classList.remove('show');
+                    renderFilters();
+                    applyFilters();
+                    saveDataToStorage(); // 保存数据
+                    showToast('记录已成功更新');
+                }
+            }
+
+            // 处理删除记录
+            function handleDelete(e) {
+                e.stopPropagation();
+                const id = e.currentTarget.dataset.id;
+                console.log('Delete clicked for id:', id, 'type:', typeof id);
+                
+                // 直接从表格中删除该行，提供即时反馈
+                const row = e.currentTarget.closest('tr');
+                if (row) {
+                    row.style.opacity = '0.5';
+                    row.style.transition = 'opacity 0.3s';
+                }
+                
+                // 查找记录是否存在（使用字符串比较）
+                const recordIndex = records.findIndex(r => r.id.toString() === id.toString());
+                console.log('Record index:', recordIndex);
+                
+                if (recordIndex === -1) {
+                    showToast('未找到要删除的记录');
+                    if (row) {
+                        row.style.opacity = '1';
+                    }
+                    return;
+                }
+                
+                if (confirm('确定要删除这条记录吗？')) {
+                    records.splice(recordIndex, 1);
+                    console.log('Records after deletion:', records.length);
+                    
+                    // 延迟重新渲染，让用户看到删除效果
+                    setTimeout(() => {
+                        renderFilters();
+                        applyFilters();
+                        saveDataToStorage(); // 保存数据
+                        showToast('记录已成功删除');
+                    }, 300);
+                } else {
+                    if (row) {
+                        row.style.opacity = '1';
+                    }
+                }
+            }
+
+            // 处理导入
+            function handleImport(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                console.log('Importing file:', file.name);
+                showToast('正在解析文件，请稍候...');
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        console.log('Raw imported data:', json);
+                        
+                        if (!json || json.length === 0) {
+                            showToast('导入失败：文件中没有找到数据');
+                            return;
+                        }
+                        
+                        // 检查必要字段
+                        const sampleRow = json[0];
+                        const hasRequiredFields = 
+                            (sampleRow.date || sampleRow.日期) && 
+                            (sampleRow.person || sampleRow.个人) && 
+                            (sampleRow.team || sampleRow.班组) &&
+                            (sampleRow.score !== undefined || sampleRow.加减分 !== undefined);
+                        
+                        if (!hasRequiredFields) {
+                            showToast('导入失败：文件缺少必要字段（日期、个人、班组、加减分）');
+                            return;
+                        }
+                        
+                        let validRecords = [];
+                        let invalidRecords = [];
+                        
+                        json.forEach((r, i) => {
+                            try {
+                                // 提取字段值
+                                const date = r.date || r.日期;
+                                const person = (r.person || r.个人 || '').toString().trim();
+                                const team = (r.team || r.班组 || '').toString().trim();
+                                const item = (r.item || r.考核项 || '').toString().trim();
+                                const score = parseFloat(r.score || r.加减分 || 0);
+                                
+                                // 验证必填字段
+                                if (!date) {
+                                    invalidRecords.push(`第${i+1}行：缺少日期`);
+                                    return;
+                                }
+                                
+                                if (!person) {
+                                    invalidRecords.push(`第${i+1}行：缺少个人信息`);
+                                    return;
+                                }
+                                
+                                if (!team) {
+                                    invalidRecords.push(`第${i+1}行：缺少班组信息`);
+                                    return;
+                                }
+                                
+                                // 验证日期格式
+                                let formattedDate = date;
+                                if (typeof date === 'string') {
+                                    // 尝试解析不同的日期格式
+                                    if (date.includes('/')) {
+                                        const parts = date.split('/');
+                                        if (parts.length === 3) {
+                                            formattedDate = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+                                        }
+                                    } else if (date.includes('.')) {
+                                        const parts = date.split('.');
+                                        if (parts.length === 3) {
+                                            formattedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                                        }
+                                    }
+                                } else if (typeof date === 'number') {
+                                    // Excel日期序列号转换
+                                    const excelDate = date;
+                                    const dateObj = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+                                    formattedDate = dateObj.toISOString().split('T')[0];
+                                }
+                                
+                                // 验证日期有效性
+                                const dateObj = new Date(formattedDate);
+                                if (isNaN(dateObj.getTime())) {
+                                    invalidRecords.push(`第${i+1}行：日期格式无效`);
+                                    return;
+                                }
+                                
+                                // 验证分数
+                                if (isNaN(score)) {
+                                    invalidRecords.push(`第${i+1}行：分数格式无效`);
+                                    return;
+                                }
+                                
+                                // 创建有效记录
+                                validRecords.push({
+                                    id: r.id || Date.now() + i,
+                                    date: formattedDate,
+                                    person: person,
+                                    team: team,
+                                    item: item || '未指定考核项',
+                                    score: score,
+                                    evaluator: r.evaluator || r.评价人 || r.评价 || '系统管理员'
+                                });
+                                
+                            } catch (error) {
+                                invalidRecords.push(`第${i+1}行：数据格式错误 - ${error.message}`);
+                            }
+                        });
+                        
+                        console.log('Valid records:', validRecords.length);
+                        console.log('Invalid records:', invalidRecords.length);
+                        
+                        if (invalidRecords.length > 0) {
+                            console.warn('Invalid records details:', invalidRecords);
+                            showToast(`部分数据导入失败：${invalidRecords.length}条记录格式错误，请检查文件`);
+                        }
+                        
+                        if (validRecords.length > 0) {
+                            records = validRecords;
+                            renderFilters();
+                            applyFilters();
+                            saveDataToStorage(); // 导入成功后立即保存
+                            showToast(`成功导入 ${validRecords.length} 条记录${invalidRecords.length > 0 ? `，${invalidRecords.length}条记录格式错误` : ''}`);
+                        } else {
+                            showToast('导入失败：所有记录格式都不正确，请检查文件格式');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        if (error.message.includes('Corrupted zip')) {
+                            showToast('导入失败：文件已损坏或格式错误，请检查文件');
+                        } else if (error.message.includes('Invalid character')) {
+                            showToast('导入失败：文件包含无效字符，请检查编码格式');
+                        } else {
+                            showToast(`导入失败：文件处理错误 - ${error.message}`);
+                        }
+                    }
+                };
+                
+                reader.onerror = function(error) {
+                    console.error('File read error:', error);
+                    showToast('导入失败：文件读取错误，请检查文件是否被占用');
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+
+            // 处理导出
+            function handleExport() {
+                const worksheet = XLSX.utils.json_to_sheet(records);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "考核数据");
+                XLSX.writeFile(workbook, "考核数据.xlsx");
+                showToast('数据导出成功');
+            }
+
+            // 处理上传规则图片（从模态框）
+            function handleAddRule(e) {
+                e.preventDefault();
+                const formData = new FormData(addRuleForm);
+                const title = formData.get('title');
+                const imageFile = formData.get('image');
+
+                console.log('Uploading rule image from modal:', title, imageFile);
+
+                if (!imageFile) {
+                    showToast('请选择要上传的图片');
+                    return;
+                }
+
+                if (!title.trim()) {
+                    showToast('请输入规则标题');
+                    return;
+                }
+
+                handleRuleImageUpload(imageFile, title.trim());
+                addRuleModal.classList.remove('show');
+                addRuleForm.reset();
+            }
+
+            // 统一处理规则图片上传（从模态框）
+            function handleRuleImageUpload(file, title) {
+                console.log('Processing rule image upload from modal:', file.name, title);
+
+                if (!file.type.match('image.*')) {
+                    showToast('请选择图片文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newRule = {
+                        id: Date.now(),
+                        title: title || '未命名规则',
+                        url: e.target.result
+                    };
+                    ruleImagesList.push(newRule);
+                    console.log('Rule image added:', ruleImagesList);
+                    renderRuleImages();
+                    saveDataToStorage(); // 保存数据
+                    showToast('规则图片上传成功');
+                };
+                reader.onerror = function() {
+                    showToast('图片读取失败，请重试');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // 编辑公告功能
+            window.editAnnouncement = function() {
+                const currentContent = document.querySelector('.card.mb-6.overflow-hidden.hover-card p.text-sm.text-gray-700').textContent;
+                document.getElementById('announcement-content').value = currentContent;
+                editAnnouncementModal.classList.add('show');
+            }
+
+            function handleEditAnnouncement(e) {
+                e.preventDefault();
+                const formData = new FormData(editAnnouncementForm);
+                const newContent = formData.get('content');
+                document.querySelector('.card.mb-6.overflow-hidden.hover-card p.text-sm.text-gray-700').textContent = newContent;
+                editAnnouncementModal.classList.remove('show');
+                saveDataToStorage(); // 保存数据
+                showToast('公告信息已更新');
+            }
+
+            // 事件绑定
+            document.getElementById('add-record-btn').addEventListener('click', function() {
+                console.log('Add record button clicked');
+                document.getElementById('add-record-modal').classList.add('show');
+            });
+            
+            // 保存数据按钮事件绑定
+            document.getElementById('save-all-data-btn').addEventListener('click', function() {
+                console.log('Save all data button clicked');
+                saveDataToStorage();
+            });
+            
+            // 快速新增按钮
+            document.getElementById('quick-add-btn').addEventListener('click', function() {
+                console.log('Quick add button clicked');
+                document.getElementById('add-record-modal').classList.add('show');
+            });
+            
+            document.getElementById('add-rule-btn').addEventListener('click', function() {
+                console.log('Add rule button clicked');
+                document.getElementById('add-rule-modal').classList.add('show');
+            });
+            
+            cancelAddBtn.addEventListener('click', () => addRecordModal.classList.remove('show'));
+            cancelEditBtn.addEventListener('click', () => editRecordModal.classList.remove('show'));
+            addRecordForm.addEventListener('submit', handleAddRecord);
+            editRecordForm.addEventListener('submit', handleEditRecord);
+            importBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleImport);
+            exportBtn.addEventListener('click', handleExport);
+            cancelRuleBtn.addEventListener('click', () => addRuleModal.classList.remove('show'));
+            addRuleForm.addEventListener('submit', handleAddRule);
+            cancelAnnouncementBtn.addEventListener('click', () => editAnnouncementModal.classList.remove('show'));
+            editAnnouncementForm.addEventListener('submit', handleEditAnnouncement);
+
+            // 自动滚动功能
+            window.autoScrollInterval = null;
+            
+            // 计算上月最佳
+            function calculateLastMonthBest() {
+                const today = new Date();
+                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const lastMonthName = lastMonth.toLocaleDateString('zh-CN', { month: 'long' });
+                
+                // 获取上月数据
+                const lastMonthRecords = records.filter(r => {
+                    const recordDate = new Date(r.date);
+                    return recordDate.getMonth() === lastMonth.getMonth() && 
+                           recordDate.getFullYear() === lastMonth.getFullYear();
+                });
+
+                // 计算个人得分
+                const personScores = {};
+                lastMonthRecords.forEach(record => {
+                    if (!personScores[record.person]) {
+                        personScores[record.person] = 0;
+                    }
+                    personScores[record.person] += record.score;
+                });
+
+                // 计算班组得分
+                const teamScores = {};
+                lastMonthRecords.forEach(record => {
+                    if (!teamScores[record.team]) {
+                        teamScores[record.team] = 0;
+                    }
+                    teamScores[record.team] += record.score;
+                });
+
+                // 找出最佳个人
+                const bestPerson = Object.entries(personScores).reduce((best, [person, score]) => 
+                    (!best || score > best.score) ? { person, score } : best, null);
+
+                // 找出最佳班组
+                const bestTeam = Object.entries(teamScores).reduce((best, [team, score]) => 
+                    (!best || score > best.score) ? { team, score } : best, null);
+
+                // 更新UI
+                const bestPersonName = document.getElementById('best-person-name');
+                const bestPersonScore = document.getElementById('best-person-score');
+                const bestTeamName = document.getElementById('best-team-name');
+                const bestTeamScore = document.getElementById('best-team-score');
+
+                if (bestPerson) {
+                    bestPersonName.textContent = bestPerson.person;
+                    bestPersonScore.textContent = `${lastMonthName}得分: ${bestPerson.score >= 0 ? '+' : ''}${bestPerson.score}`;
+                } else {
+                    bestPersonName.textContent = '暂无数据';
+                    bestPersonScore.textContent = `${lastMonthName}无考核记录`;
+                }
+
+                if (bestTeam) {
+                    bestTeamName.textContent = bestTeam.team;
+                    bestTeamScore.textContent = `${lastMonthName}得分: ${bestTeam.score >= 0 ? '+' : ''}${bestTeam.score}`;
+                } else {
+                    bestTeamName.textContent = '暂无数据';
+                    bestTeamScore.textContent = `${lastMonthName}无考核记录`;
+                }
+            }
+
+            // 全局函数定义
+            window.startAutoScroll = function() {
+                console.log('Starting auto scroll');
+                // 清除之前的定时器
+                if (window.autoScrollInterval) {
+                    clearInterval(window.autoScrollInterval);
+                    window.autoScrollInterval = null;
+                }
+                
+                const container = document.getElementById('recent-activities');
+                if (!container) {
+                    console.log('Recent activities container not found');
+                    return;
+                }
+                
+                if (container.scrollHeight <= container.clientHeight) {
+                    console.log('Content not scrollable');
+                    return; // 内容不足以滚动
+                }
+                
+                window.autoScrollInterval = setInterval(() => {
+                    if (container) {
+                        container.scrollTop += 1;
+                        
+                        // 当滚动到底部时，重置到顶部
+                        if (container.scrollTop >= container.scrollHeight - container.clientHeight - 1) {
+                            setTimeout(() => {
+                                if (container) {
+                                    container.scrollTop = 0;
+                                }
+                            }, 1000); // 暂停1秒后回到顶部
+                        }
+                    }
+                }, 50); // 每50毫秒滚动1像素
+            };
+            
+            window.stopAutoScroll = function() {
+                console.log('Stopping auto scroll');
+                if (window.autoScrollInterval) {
+                    clearInterval(window.autoScrollInterval);
+                    window.autoScrollInterval = null;
+                }
+            };
+
+            filterPerson.addEventListener('change', applyFilters);
+            filterTeam.addEventListener('change', applyFilters);
+            filterYear.addEventListener('change', applyFilters);
+            filterMonth.addEventListener('change', applyFilters);
+
+            // 初始化拖拽上传功能
+            function initDragAndDrop() {
+                const dropzone = document.getElementById('rule-dropzone');
+                const fileInput = document.getElementById('rule-drop-input');
+
+                // 点击上传
+                dropzone.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                // 拖拽事件
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, preventDefaults, false);
+                });
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                // 拖拽样式
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, highlight, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, unhighlight, false);
+                });
+
+                function highlight() {
+                    dropzone.classList.add('border-blue-500', 'bg-blue-50');
+                }
+
+                function unhighlight() {
+                    dropzone.classList.remove('border-blue-500', 'bg-blue-50');
+                }
+
+                // 处理文件拖放
+                dropzone.addEventListener('drop', handleDrop, false);
+
+                function handleDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    
+                    if (files.length > 0) {
+                        handleDragDropUpload(files[0]);
+                    }
+                }
+
+                // 文件选择事件
+                fileInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        handleDragDropUpload(this.files[0]);
+                    }
+                });
+            }
+
+            // 处理规则图片上传（拖拽或点击）
+            function handleDragDropUpload(file) {
+                console.log('Uploading rule image via drag/drop:', file.name);
+
+                if (!file.type.match('image.*')) {
+                    showToast('请选择图片文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // 显示输入标题的模态框
+                    const title = prompt('请输入规则标题:', '');
+                    if (title !== null && title.trim()) {
+                        const newRule = {
+                            id: Date.now(),
+                            title: title.trim(),
+                            url: e.target.result
+                        };
+                        ruleImagesList.push(newRule);
+                        console.log('Rule image added:', ruleImagesList);
+                        renderRuleImages();
+                        saveDataToStorage(); // 保存数据
+                        showToast('规则图片上传成功');
+                    }
+                };
+                reader.onerror = function() {
+                    showToast('图片读取失败，请重试');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // 全新的图片查看器功能
+            window.showImageModal = function(imageUrl, title) {
+                console.log('Showing image modal for:', title);
+                
+                // 移除已存在的模态框
+                removeImageModal();
+                
+                // 创建模态框容器
+                const modal = document.createElement('div');
+                modal.id = 'image-modal';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.9);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                `;
+                
+                // 模态框内容
+                modal.innerHTML = `
+                    <div style="position: relative; max-width: 90%; max-height: 90%;">
+                        <!-- 关闭按钮 -->
+                        <button id="modal-close-btn" 
+                                style="position: absolute; top: -50px; right: 0; 
+                                       width: 40px; height: 40px; 
+                                       background: #ff4444; color: white;
+                                       border: none; border-radius: 50%; 
+                                       cursor: pointer; font-size: 24px;
+                                       display: flex; align-items: center; justify-content: center;">
+                            ×
+                        </button>
+                        
+                        <!-- 标题 -->
+                        <h3 style="position: absolute; top: -50px; left: 0; 
+                                   color: white; font-size: 18px; 
+                                   margin: 0; padding: 0;">
+                            ${title || '查看图片'}
+                        </h3>
+                        
+                        <!-- 图片 -->
+                        <div style="background: white; padding: 10px; border-radius: 8px;">
+                            <img src="${imageUrl}" 
+                                 alt="${title}" 
+                                 style="max-width: 100%; max-height: 70vh; 
+                                        object-contain; cursor: pointer;" 
+                                 id="modal-image">
+                        </div>
+                        
+                        <!-- 操作提示 -->
+                        <div style="position: absolute; bottom: -40px; left: 0; right: 0;
+                                    text-align: center; color: white; font-size: 16px;">
+                            点击图片、关闭按钮或按 ESC 键退出
+                        </div>
+                    </div>
+                `;
+                
+                // 添加到页面
+                document.body.appendChild(modal);
+                document.body.style.overflow = 'hidden';
+                
+                // 绑定关闭事件
+                const closeBtn = document.getElementById('modal-close-btn');
+                const modalImage = document.getElementById('modal-image');
+                
+                if (closeBtn) {
+                    closeBtn.onclick = removeImageModal;
+                }
+                
+                if (modalImage) {
+                    modalImage.onclick = removeImageModal;
+                }
+                
+                // 点击背景关闭
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        removeImageModal();
+                    }
+                };
+                
+                // ESC键关闭
+                const escKeyHandler = function(e) {
+                    if (e.key === 'Escape' || e.keyCode === 27) {
+                        removeImageModal();
+                    }
+                };
+                
+                document.addEventListener('keydown', escKeyHandler);
+                modal.escHandler = escKeyHandler;
+            };
+            
+            // 移除图片模态框
+            function removeImageModal() {
+                const modal = document.getElementById('image-modal');
+                if (modal) {
+                    // 移除ESC键监听
+                    if (modal.escHandler) {
+                        document.removeEventListener('keydown', modal.escHandler);
+                    }
+                    
+                    // 移除模态框
+                    modal.remove();
+                    document.body.style.overflow = '';
+                    console.log('Image modal removed');
+                }
+            }
+
+            // 保存数据到本地存储 - 重新实现
+            function saveDataToStorage() {
+                try {
+                    console.log('🔄 Starting save operation...');
+                    
+                    // 验证数据完整性
+                    if (!records || !Array.isArray(records)) {
+                        throw new Error('Records data is invalid');
+                    }
+                    
+                    // 保存到localStorage
+                    localStorage.setItem('assessment-records', JSON.stringify(records));
+                    localStorage.setItem('assessment-rules', JSON.stringify(ruleImagesList));
+                    
+                    const announcementElement = document.querySelector('.card.mb-6.overflow-hidden.hover-card p.text-sm.text-gray-700');
+                    if (announcementElement) {
+                        const announcementContent = announcementElement.textContent;
+                        localStorage.setItem('assessment-announcement', announcementContent);
+                    }
+                    
+                    console.log('✅ Data saved successfully to localStorage');
+                    console.log('📊 Records count:', records.length);
+                    console.log('🖼️  Rules count:', ruleImagesList.length);
+                    
+                    // 显示保存成功提示
+                    const toast = document.getElementById('toast');
+                    toast.textContent = '数据保存成功';
+                    toast.style.backgroundColor = '#10b981';
+                    toast.classList.add('show');
+                    
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2000);
+                    
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ Save operation failed:', error.message);
+                    console.error('Error details:', error.stack);
+                    
+                    // 显示详细的错误提示
+                    const errorMessage = error.message.includes('QuotaExceededError') 
+                        ? '存储空间不足，请清理浏览器缓存' 
+                        : error.message.includes('SecurityError')
+                        ? '没有存储权限，请检查浏览器设置'
+                        : '数据保存失败：' + error.message;
+                        
+                    showToast(errorMessage);
+                    return false;
+                }
+            }
+            
+            // 从本地存储加载数据
+            function loadDataFromStorage() {
+                try {
+                    console.log('📥 Loading data from localStorage...');
+                    
+                    // 加载考核记录
+                    const savedRecords = localStorage.getItem('assessment-records');
+                    if (savedRecords) {
+                        records = JSON.parse(savedRecords);
+                        console.log('✅ Loaded records:', records.length);
+                    }
+                    
+                    // 加载规则图片
+                    const savedRules = localStorage.getItem('assessment-rules');
+                    if (savedRules) {
+                        ruleImagesList = JSON.parse(savedRules);
+                        console.log('✅ Loaded rule images:', ruleImagesList.length);
+                    }
+                    
+                    // 加载公告内容
+                    const savedAnnouncement = localStorage.getItem('assessment-announcement');
+                    if (savedAnnouncement) {
+                        const announcementElement = document.querySelector('.card.mb-6.overflow-hidden.hover-card p.text-sm.text-gray-700');
+                        if (announcementElement) {
+                            announcementElement.textContent = savedAnnouncement;
+                            console.log('✅ Loaded announcement');
+                        }
+                    }
+                    
+                    console.log('📊 Final records count:', records.length);
+                    console.log('🖼️  Final rule images count:', ruleImagesList.length);
+                    
+                } catch (error) {
+                    console.error('❌ Load data failed:', error.message);
+                    console.error('Error details:', error.stack);
+                    
+                    // 如果加载失败，使用默认数据
+                    console.log('🔄 Using default data due to load failure');
+                }
+            }
+
+            // 初始化
+            console.log('Initializing assessment system...');
+            console.log('Initial records:', records.length);
+            console.log('Initial rule images:', ruleImagesList.length);
+            
+            // 首先加载数据
+            loadDataFromStorage();
+            
+            // 定期自动保存 - 修复版
+            const autoSaveInterval = setInterval(() => {
+                try {
+                    const success = saveDataToStorage();
+                    if (success) {
+                        console.log('✅ Auto-saved at:', new Date().toLocaleTimeString());
+                    }
+                } catch (error) {
+                    console.error('❌ Auto-save failed:', error);
+                }
+            }, 30000); // 每30秒自动保存一次
+            
+            // 页面关闭前保存 - 增强版
+            window.addEventListener('beforeunload', function(e) {
+                // 执行保存操作
+                saveDataToStorage();
+                console.log('Data saved before page unload');
+                
+                // 对于某些浏览器，需要返回值才能触发确认对话框
+                // 但我们不阻止用户关闭，只是确保数据保存
+                const message = '数据正在保存中...';
+                e.returnValue = message;
+                return message;
+            });
+            
+            // 页面隐藏时保存（用户切换标签页等情况）
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    saveDataToStorage();
+                    console.log('Data saved when page became hidden');
+                }
+            });
+            
+            // 窗口失去焦点时保存
+            window.addEventListener('blur', function() {
+                saveDataToStorage();
+                console.log('Data saved when window lost focus');
+            });
+            
+            renderFilters();
+            applyFilters();
+            renderRuleImages();
+            calculateLastMonthBest();
+            initDragAndDrop();
+            startAutoScroll();
+            
+            // 显示离线使用提示
+            showToast('数据已自动保存到本地，支持离线使用。提示：此版本为本地存储版，如需多人联网编辑，请升级到服务器版本。');
+            
+            // 显示自动保存提示
+            setTimeout(() => {
+                showToast('系统已启用自动保存功能，每30秒自动保存一次数据');
+            }, 3000);
+            
+            // 立即执行一次自动保存测试
+            setTimeout(() => {
+                try {
+                    saveDataToStorage();
+                    console.log('✅ Initial auto-save test successful');
+                } catch (error) {
+                    console.error('❌ Initial auto-save test failed:', error);
+                    showToast('自动保存功能测试失败，请检查浏览器存储权限');
+                }
+            }, 1000);
+            
+            // 设置创建时间
+            const createTime = new Date();
+            document.getElementById('create-time').textContent = `创建时间: ${createTime.getFullYear()}.${String(createTime.getMonth() + 1).padStart(2, '0')}.${String(createTime.getDate()).padStart(2, '0')}`;
+            
+            // 启动自动滚动
+            setTimeout(() => {
+                window.startAutoScroll();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
